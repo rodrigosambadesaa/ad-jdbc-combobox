@@ -1,12 +1,21 @@
 package dev.rodrigosambade.jdbc;
+
+import java.sql.Connection;
+
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class ArticleRepositoryTest {
-    @Test void demoContainsArticles() throws Exception {
-        try(var c=DemoDatabase.open()){
-            var r=new ArticleRepository();
-            assertFalse(r.findAll(c).isEmpty());
-            assertTrue(r.findById(c,1).isPresent());
+
+    @Test
+    void demoDatabaseContainsArticles() throws Exception {
+        try (Connection connection = DemoDatabase.open()) {
+            ArticleRepository repository = new ArticleRepository();
+
+            assertFalse(repository.findAll(connection).isEmpty());
+            assertTrue(repository.findById(connection, 1).isPresent());
         }
     }
 }

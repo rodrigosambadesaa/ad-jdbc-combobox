@@ -1,24 +1,63 @@
 package dev.rodrigosambade.jdbc;
-import java.sql.*;
-import java.util.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 public final class ArticleRepository {
-    private static final String SELECT = "select a.codigo,m.nombre,a.modelo,a.descripcion,a.precio,a.descuento,f.nombre from articulos a join marcas m on m.codigo=a.cod_marca join familias f on f.codigo=a.cod_familia";
-    public List<Article> findAll(Connection c) throws SQLException {
-        try (PreparedStatement ps=c.prepareStatement(SELECT+" order by a.codigo"); ResultSet rs=ps.executeQuery()) {
-            List<Article> out=new ArrayList<>();
-            while(rs.next()) out.add(map(rs));
-            return List.copyOf(out);
+
+    private static final String SELECT_ARTICLES = """
+            SELECT a.codigo,
+                   m.nombre,
+                   a.modelo,
+                   a.descripcion,
+                   a.precio,
+                   a.descuento,
+                   f.nombre
+              FROM articulos a
+              JOIN marcas m ON m.codigo = a.cod_marca
+              JOIN familias f ON f.codigo = a.cod_familia
+            """;
+
+    public List<Article> findAll(Connection connection) throws SQLException {
+        String sql = SELECT_ARTICLES + " ORDER BY a.codigo";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            List<Article> articles = new ArrayList<>();
+            while (resultSet.next()) {
+                articles.add(map(resultSet));
+            }
+            return List.copyOf(articles);
         }
     }
-    public Optional<Article> findById(Connection c,int id) throws SQLException {
-        try(PreparedStatement ps=c.prepareStatement(SELECT+" where a.codigo=?")){
-            ps.setInt(1,id);
-            try(ResultSet rs=ps.executeQuery()){
-                return rs.next()?Optional.of(map(rs)):Optional.empty();
+
+    public Optional<Article> findById(Connection connection, int id) throws SQLException {
+        String sql = SELECT_ARTICLES + " WHERE a.codigo = ?";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next()
+                        ? Optional.of(map(resultSet))
+                        : Optional.empty();
             }
         }
     }
-    private Article map(ResultSet rs) throws SQLException {
-        return new Article(rs.getInt(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getBigDecimal(5),rs.getBigDecimal(6),rs.getString(7));
+
+    private static Article map(ResultSet resultSet) throws SQLException {
+        return new Article(
+                resultSet.getInt(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4),
+                resultSet.getBigDecimal(5),
+                resultSet.getBigDecimal(6),
+                resultSet.getString(7));
     }
 }
